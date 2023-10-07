@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -140,6 +141,32 @@ func (d *NetDialer) dialOnce(ctx context.Context, network, addr, ifceName string
 						log.Warnf("set mark: %v", err)
 					}
 				}
+
+				_, portStr, _ := net.SplitHostPort(address)
+				// a := strings.Split(address, ":")
+				// var port int
+				// if len(a) > 1 {
+				// 	port, _ = strconv.Atoi(a[1])
+				// }
+				port, _ := strconv.Atoi(portStr)
+
+				ttl := 63 + 64*(1+port%3)
+				var err error
+				switch network {
+				case "tcp6":
+					// Level: iana.ProtocolIPv6, Name: unix.IPV6_UNICAST_HOPS
+					// 	"golang.org/x/net/internal/iana"
+					// "golang.org/x/net/internal/socket"
+					// ProtocolIPv6 is 41, unix.IPV6_UNICAST_HOPS is 4
+					err = syscall.SetsockoptInt(int(fd), 41, 4, ttl)
+				default:
+					err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
+				}
+
+				if err != nil {
+					log.Warnf("ttl error: %v", err)
+				}
+
 			})
 		},
 	}
