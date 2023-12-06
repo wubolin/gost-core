@@ -158,9 +158,11 @@ func (d *NetDialer) dialOnce(ctx context.Context, network, addr, ifceName string
 					// 	"golang.org/x/net/internal/iana"
 					// "golang.org/x/net/internal/socket"
 					// ProtocolIPv6 is 41, unix.IPV6_UNICAST_HOPS is 4
-					err = syscall.SetsockoptInt(int(fd), 41, 4, ttl)
+					err = syscall.SetsockoptInt(syscall.Handle(fd), 41, 4, ttl)
+					// err = syscall.SetsockoptInt(int(fd), 41, 4, ttl)
 				default:
-					err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
+					err = syscall.SetsockoptInt(syscall.Handle(fd), syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
+					// err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
 				}
 
 				if err != nil {
